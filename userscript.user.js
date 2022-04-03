@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.3
+// @version      2.4
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -107,12 +107,12 @@ let getPendingWork = (work, rgbaOrder, rgbaCanvas) => {
     connectSocket()
     attemptPlace()
 
-    setInterval(() => {
+    setInterval(async () => {
         if (socket) {
-            const progress = getProgress()
+            const progress = await getProgress()
             if (progress >= 0) socket.send(JSON.stringify({type: 'progress', progress: progress}))
         }
-    }, 5000)
+    }, 10000)
     setInterval(async () => {
         accessToken = await getAccessToken()
     }, 30 * 60 * 1000)
@@ -374,6 +374,8 @@ async function getProgress() {
     const work = getPendingWork(order, rgbaOrder, rgbaCanvas);
 
     const percentComplete = 100 - (work.length * 100 / order.length);
+  
+  return percentComplete;
 }
 
 async function getAccessToken() {
