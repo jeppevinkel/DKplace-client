@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      10.0
+// @version      1.0
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
