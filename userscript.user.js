@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.0
+// @version      2.1
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -203,6 +203,12 @@ async function attemptPlace() {
     const x = i % 2000;
     const y = Math.floor(i / 2000);
     const hex = rgbaOrderToHex(i, rgbaOrder);
+  
+    try {
+      socket.send(JSON.stringify({ type: 'progress', progress: percentComplete }));
+    } catch(e) {
+      console.log(e)
+    }
   
     Toastify({
         text: `Trying to place pixel ${x}, ${y}... (${percentComplete}% complete, ${workRemaining} left)`,
