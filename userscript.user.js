@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.1
+// @version      2.2
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -196,7 +196,7 @@ async function attemptPlace() {
         return;
     }
   
-    const percentComplete = 100 - Math.ceil(work.length * 100 / order.length);
+    const percentComplete = 100 - (work.length * 100 / order.length);
     const workRemaining = work.length;
     const idx = Math.floor(Math.random() * work.length);
     const i = work[idx];
@@ -211,7 +211,7 @@ async function attemptPlace() {
     }
   
     Toastify({
-        text: `Trying to place pixel ${x}, ${y}... (${percentComplete}% complete, ${workRemaining} left)`,
+        text: `Trying to place pixel ${x}, ${y}... (${percentComplete.toFixed(2)}% complete, ${workRemaining} left)`,
         duration: DEFAULT_TOAST_DURATION_MS
     }).showToast();
   
