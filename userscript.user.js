@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.6
+// @version      2.7
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -18,6 +18,8 @@
 
 var socket;
 var order = undefined;
+// var placeOrders = [];
+// var canvas = document.createElement('canvas');
 var accessToken;
 var currentOrderCanvas = document.createElement('canvas');
 var currentOrderCtx = currentOrderCanvas.getContext('2d');
@@ -74,6 +76,8 @@ let getRealWork = (rgbaOrder) => {
 let getPendingWork = (work, rgbaOrder, rgbaCanvas) => {
     let pendingWork = []
     for (const i of work) {
+      pendingWork.push(i)
+      continue
         if (rgbaOrderToHex(i, rgbaOrder) !== rgbaOrderToHex(i, rgbaCanvas)) {
             pendingWork.push(i)
         }
@@ -91,6 +95,10 @@ let getPendingWork = (work, rgbaOrder, rgbaCanvas) => {
     currentPlaceCanvas.height = 2000
     currentPlaceCanvas.style.display = 'none'
     currentPlaceCanvas = document.body.appendChild(currentPlaceCanvas)
+    // canvas.width = 2000
+    // canvas.height = 2000
+    // canvas.style.display = 'none'
+    // canvas = document.body.appendChild(canvas)
 
     Toastify({
         text: 'Getting Access Token...',
@@ -187,65 +195,90 @@ function connectSocket() {
     }
 }
 
+function shuffleWeighted(array) {
+	for (const item of array) {
+		item.rndPriority = Math.round(placeOrders.priorities[item.priority] * Math.random());
+	}
+	array.sort((a, b) => b.rndPriority - a.rndPriority);
+}
+
+function getPixelList() {
+	const structures = [];
+	if (Date.now() > 1649133000 * 1000) {
+		structures.push(placeOrders.structues["overwrite"])
+	} else {
+		for (const structureName in placeOrders.structures) {
+			if (structureName != "overwrite") {
+				shuffleWeighted(placeOrders.structures[structureName].pixels);
+				structures.push(placeOrders.structures[structureName]);
+			}
+		}
+		shuffleWeighted(structures);
+	}
+	return structures.map(structure => structure.pixels).flat();
+}
+
 async function attemptPlace() {
     if (order == undefined) {
         setTimeout(attemptPlace, 10000) // probeer opnieuw in 2sec.
         return
     }
-    var ctx
-    try {
-        ctx = await getCanvasFromUrl(
-            await getCurrentImageUrl('0'),
-            currentPlaceCanvas,
-            0,
-            0,
-            false,
-        )
-        ctx = await getCanvasFromUrl(
-            await getCurrentImageUrl('1'),
-            currentPlaceCanvas,
-            1000,
-            0,
-            false,
-        )
-        ctx = await getCanvasFromUrl(
-            await getCurrentImageUrl('2'),
-            currentPlaceCanvas,
-            0,
-            1000,
-            false,
-        )
-        ctx = await getCanvasFromUrl(
-            await getCurrentImageUrl('3'),
-            currentPlaceCanvas,
-            1000,
-            1000,
-            false,
-        )
-    } catch (e) {
-        console.warn('Error retrieving map: ', e)
-        Toastify({
-            text: 'Error retrieving map. Try again in 10 sec...',
-            duration: DEFAULT_TOAST_DURATION_MS,
-        }).showToast()
-        setTimeout(attemptPlace, 10000) // Try again in 10sec.
-        return
-    }
+//     var ctx
+//     try {
+//         ctx = await getCanvasFromUrl(
+//             await getCurrentImageUrl('0'),
+//             currentPlaceCanvas,
+//             0,
+//             0,
+//             false,
+//         )
+//         ctx = await getCanvasFromUrl(
+//             await getCurrentImageUrl('1'),
+//             currentPlaceCanvas,
+//             1000,
+//             0,
+//             false,
+//         )
+//         ctx = await getCanvasFromUrl(
+//             await getCurrentImageUrl('2'),
+//             currentPlaceCanvas,
+//             0,
+//             1000,
+//             false,
+//         )
+//         ctx = await getCanvasFromUrl(
+//             await getCurrentImageUrl('3'),
+//             currentPlaceCanvas,
+//             1000,
+//             1000,
+//             false,
+//         )
+//     } catch (e) {
+//         console.warn('Error retrieving map: ', e)
+//         Toastify({
+//             text: 'Error retrieving map. Try again in 10 sec...',
+//             duration: DEFAULT_TOAST_DURATION_MS,
+//         }).showToast()
+//         setTimeout(attemptPlace, 10000) // Try again in 10sec.
+//         return
+//     }
 
     const rgbaOrder = currentOrderCtx.getImageData(0, 0, 2000, 2000).data
-    const rgbaCanvas = ctx.getImageData(0, 0, 2000, 2000).data
+//     const rgbaCanvas = ctx.getImageData(0, 0, 2000, 2000).data
+    const rgbaCanvas = ''
     const work = getPendingWork(order, rgbaOrder, rgbaCanvas)
 
-    if (work.length === 0) {
-        Toastify({
-            text: `All pixels are already in the right place! Try again in 30 sec...`,
-            duration: 30000,
-        }).showToast()
-        setTimeout(attemptPlace, 30000) // Try again in 30sec.
-        return
-    }
+//     if (work.length === 0) {
+//         Toastify({
+//             text: `All pixels are already in the right place! Try again in 30 sec...`,
+//             duration: 30000,
+//         }).showToast()
+//         setTimeout(attemptPlace, 30000) // Try again in 30sec.
+//         return
+//     }
 
-    const percentComplete = 100 - Math.ceil((work.length * 100) / order.length)
+    // const percentComplete = 100 - Math.ceil((work.length * 100) / order.length)
+    const percentComplete = 'NaN'
     const workRemaining = work.length
     const idx = Math.floor(Math.random() * work.length)
     const i = work[idx]
@@ -328,12 +361,35 @@ async function place(x, y, color) {
                             y: y % 1000,
                         },
                         colorIndex: color,
-                        canvasIndex: getCanvas(x, y),
+                        canvasIndex: getCanvasId(x, y),
                     },
                 },
             },
             query:
-                'mutation setPixel($input: ActInput!) {\n  act(input: $input) {\n    data {\n      ... on BasicMessage {\n        id\n        data {\n          ... on GetUserCooldownResponseMessageData {\n            nextAvailablePixelTimestamp\n            __typename\n          }\n          ... on SetPixelResponseMessageData {\n            timestamp\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n',
+                `mutation setPixel($input: ActInput!) {
+				act(input: $input) {
+					data {
+						... on BasicMessage {
+							id
+							data {
+								... on GetUserCooldownResponseMessageData {
+									nextAvailablePixelTimestamp
+									__typename
+								}
+								... on SetPixelResponseMessageData {
+									timestamp
+									__typename
+								}
+								__typename
+							}
+							__typename
+						}
+						__typename
+					}
+					__typename
+				}
+			}
+			`,
         }),
         headers: {
             origin: 'https://hot-potato.reddit.com',
@@ -345,17 +401,12 @@ async function place(x, y, color) {
     }).catch((error) => console.error('Error placing Pixel: ', error))
 }
 
-function getCanvas(x, y) {
-    if (x <= 999) {
-        console.log('Canvas: ', y <= 999 ? 0 : 2)
-        return y <= 999 ? 0 : 2
-    } else {
-        console.log('Canvas: ', y <= 999 ? 1 : 3)
-        return y <= 999 ? 1 : 3
-    }
+function getCanvasId(x,y) {
+	return (x > 1000) + (y > 1000)*2
 }
 
 async function getProgress() {
+  return -1;
     if (order == undefined) {
         return -1;
     }
@@ -423,7 +474,24 @@ async function getCurrentImageUrl(id = '0') {
                         extensions: {},
                         operationName: 'replace',
                         query:
-                            'subscription replace($input: SubscribeInput!) {\n  subscribe(input: $input) {\n    id\n    ... on BasicMessage {\n      data {\n        __typename\n        ... on FullFrameMessageData {\n          __typename\n          name\n          timestamp\n        }\n      }\n      __typename\n    }\n    __typename\n  }\n}',
+                            `subscription replace($input: SubscribeInput!) {
+						subscribe(input: $input) {
+							id
+							... on BasicMessage {
+								data {
+									__typename
+									... on FullFrameMessageData {
+										__typename
+										name
+										timestamp
+									}
+								}
+								__typename
+							}
+							__typename
+						}
+					}
+					`,
                     },
                 }),
             )
@@ -472,6 +540,7 @@ function getCanvasFromUrl(url, canvas, x = 0, y = 0, clearCanvas = false) {
                 }).showToast()
                 setTimeout(() => loadImage(ctx), 10000)
             }
+            console.log(url)
             img.src = url
         }
         loadImage(canvas.getContext('2d'))
