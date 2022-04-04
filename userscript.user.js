@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.7
+// @version      2.8
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -14,6 +14,7 @@
 // @downloadURL  https://raw.githubusercontent.com/jeppevinkel/DKplace-client/master/userscript.user.js
 // @grant        GM_getResourceText
 // @grant        GM_addStyle
+// @grant        GM.xmlHttpRequest
 // ==/UserScript==
 
 var socket;
@@ -76,8 +77,8 @@ let getRealWork = (rgbaOrder) => {
 let getPendingWork = (work, rgbaOrder, rgbaCanvas) => {
     let pendingWork = []
     for (const i of work) {
-      pendingWork.push(i)
-      continue
+      // pendingWork.push(i)
+      // continue
         if (rgbaOrderToHex(i, rgbaOrder) !== rgbaOrderToHex(i, rgbaCanvas)) {
             pendingWork.push(i)
         }
@@ -223,62 +224,62 @@ async function attemptPlace() {
         setTimeout(attemptPlace, 10000) // probeer opnieuw in 2sec.
         return
     }
-//     var ctx
-//     try {
-//         ctx = await getCanvasFromUrl(
-//             await getCurrentImageUrl('0'),
-//             currentPlaceCanvas,
-//             0,
-//             0,
-//             false,
-//         )
-//         ctx = await getCanvasFromUrl(
-//             await getCurrentImageUrl('1'),
-//             currentPlaceCanvas,
-//             1000,
-//             0,
-//             false,
-//         )
-//         ctx = await getCanvasFromUrl(
-//             await getCurrentImageUrl('2'),
-//             currentPlaceCanvas,
-//             0,
-//             1000,
-//             false,
-//         )
-//         ctx = await getCanvasFromUrl(
-//             await getCurrentImageUrl('3'),
-//             currentPlaceCanvas,
-//             1000,
-//             1000,
-//             false,
-//         )
-//     } catch (e) {
-//         console.warn('Error retrieving map: ', e)
-//         Toastify({
-//             text: 'Error retrieving map. Try again in 10 sec...',
-//             duration: DEFAULT_TOAST_DURATION_MS,
-//         }).showToast()
-//         setTimeout(attemptPlace, 10000) // Try again in 10sec.
-//         return
-//     }
+    var ctx
+    try {
+        ctx = await getCanvasFromUrl(
+            await getCurrentImageUrl('0'),
+            currentPlaceCanvas,
+            0,
+            0,
+            false,
+        )
+        ctx = await getCanvasFromUrl(
+            await getCurrentImageUrl('1'),
+            currentPlaceCanvas,
+            1000,
+            0,
+            false,
+        )
+        ctx = await getCanvasFromUrl(
+            await getCurrentImageUrl('2'),
+            currentPlaceCanvas,
+            0,
+            1000,
+            false,
+        )
+        ctx = await getCanvasFromUrl(
+            await getCurrentImageUrl('3'),
+            currentPlaceCanvas,
+            1000,
+            1000,
+            false,
+        )
+    } catch (e) {
+        console.warn('Error retrieving map: ', e)
+        Toastify({
+            text: 'Error retrieving map. Try again in 10 sec...',
+            duration: DEFAULT_TOAST_DURATION_MS,
+        }).showToast()
+        setTimeout(attemptPlace, 10000) // Try again in 10sec.
+        return
+    }
 
     const rgbaOrder = currentOrderCtx.getImageData(0, 0, 2000, 2000).data
-//     const rgbaCanvas = ctx.getImageData(0, 0, 2000, 2000).data
-    const rgbaCanvas = ''
+    const rgbaCanvas = ctx.getImageData(0, 0, 2000, 2000).data
+    // const rgbaCanvas = ''
     const work = getPendingWork(order, rgbaOrder, rgbaCanvas)
 
-//     if (work.length === 0) {
-//         Toastify({
-//             text: `All pixels are already in the right place! Try again in 30 sec...`,
-//             duration: 30000,
-//         }).showToast()
-//         setTimeout(attemptPlace, 30000) // Try again in 30sec.
-//         return
-//     }
+    if (work.length === 0) {
+        Toastify({
+            text: `All pixels are already in the right place! Try again in 30 sec...`,
+            duration: 30000,
+        }).showToast()
+        setTimeout(attemptPlace, 30000) // Try again in 30sec.
+        return
+    }
 
-    // const percentComplete = 100 - Math.ceil((work.length * 100) / order.length)
-    const percentComplete = 'NaN'
+    const percentComplete = 100 - Math.ceil((work.length * 100) / order.length)
+    // const percentComplete = 'NaN'
     const workRemaining = work.length
     const idx = Math.floor(Math.random() * work.length)
     const i = work[idx]
@@ -406,7 +407,6 @@ function getCanvasId(x,y) {
 }
 
 async function getProgress() {
-  return -1;
     if (order == undefined) {
         return -1;
     }
@@ -522,29 +522,38 @@ async function getCurrentImageUrl(id = '0') {
 }
 
 function getCanvasFromUrl(url, canvas, x = 0, y = 0, clearCanvas = false) {
-    return new Promise((resolve, reject) => {
-        let loadImage = (ctx) => {
-            var img = new Image()
-            img.crossOrigin = 'anonymous'
-            img.onload = () => {
-                if (clearCanvas) {
-                    ctx.clearRect(0, 0, canvas.width, canvas.height)
-                }
-                ctx.drawImage(img, x, y)
-                resolve(ctx)
-            }
-            img.onerror = () => {
-                Toastify({
-                    text: 'Error retrieving folder. Try again in 10 sec...',
-                    duration: 10000,
-                }).showToast()
-                setTimeout(() => loadImage(ctx), 10000)
-            }
-            console.log(url)
-            img.src = url
+  return new Promise((resolve, reject) => {
+    let loadImage = (ctx) => {
+      GM.xmlHttpRequest({
+        method: "GET",
+        url: url,
+        responseType: 'blob',
+        onload: function(response) {
+        var urlCreator = window.URL || window.webkitURL;
+        console.log(response.response)
+        var imageUrl = urlCreator.createObjectURL(response.response);
+        console.log(imageUrl)
+        var img = new Image()
+        img.onload = () => {
+          if (clearCanvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+          }
+          ctx.drawImage(img, x, y)
+          resolve(ctx)
         }
-        loadImage(canvas.getContext('2d'))
-    })
+        img.onerror = () => {
+          Toastify({
+            text: 'Error retrieving folder. Try again in 3 sec...',
+            duration: 3000,
+          }).showToast()
+          setTimeout(() => loadImage(ctx), 3000)
+        }
+        img.src = imageUrl;
+    }
+  })
+  }
+    loadImage(canvas.getContext('2d'))
+  })
 }
 
 function rgbToHex(r, g, b) {
