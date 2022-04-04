@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.9
+// @version      3.0
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -119,9 +119,9 @@ let getPendingWork = (work, rgbaOrder, rgbaCanvas) => {
     setInterval(async () => {
         if (socket) {
             const progress = await getProgress()
-            if (progress >= 0) socket.send(JSON.stringify({type: 'progress', progress: progress}))
+            if (progress.percentComplete >= 0) socket.send(JSON.stringify({type: 'progress', progress: progress.percentComplete, pendingPixels: progress.pendingPixels}))
         }
-    }, 30000)
+    }, 10000)
     setInterval(async () => {
         accessToken = await getAccessToken()
     }, 30 * 60 * 1000)
@@ -420,6 +420,7 @@ function getCanvasId(x,y) {
 }
 
 async function getProgress() {
+  console.log('Sending progress...')
     if (order == undefined) {
         return -1;
     }
@@ -436,10 +437,23 @@ async function getProgress() {
     const rgbaOrder = currentOrderCtx.getImageData(0, 0, 2000, 2000).data;
     const rgbaCanvas = ctx.getImageData(0, 0, 2000, 2000).data;
     const work = getPendingWork(order, rgbaOrder, rgbaCanvas);
+    const pendingPixels = []
+  
+    for (const curWork of work) {
+      const x = curWork % 2000
+      const y = Math.floor(curWork / 2000)
+      pendingPixels.push({
+        x,
+        y
+      })
+    }
 
     const percentComplete = 100 - (work.length * 100 / order.length);
   
-  return percentComplete;
+  return {
+    percentComplete,
+    pendingPixels
+  };
 }
 
 async function getAccessToken() {
