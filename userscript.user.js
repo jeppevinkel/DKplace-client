@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.8
+// @version      2.9
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -305,6 +305,19 @@ async function attemptPlace() {
             try {
                 const nextPixel = error.extensions.nextAvailablePixelTs + 3000
                 const nextPixelDate = new Date(nextPixel)
+                
+                if (nextPixelDate.getTime() != nextPixelDate.getTime()) {
+                  let d = new Date(Date.now() + 10000);
+                  let delay = d.getTime() - Date.now();
+                  
+                  Toastify({
+                    text: `You are on cooldown! Trying again at ${d.toLocaleTimeString()}.`,
+                    duration: delay,
+                  }).showToast()
+                  setTimeout(attemptPlace, delay)
+                  return
+                }
+                
                 const delay = nextPixelDate.getTime() - Date.now()
                 const toast_duration = delay > 0 ? delay : DEFAULT_TOAST_DURATION_MS
                 Toastify({
