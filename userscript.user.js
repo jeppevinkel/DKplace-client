@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DK Art Bot
 // @namespace
-// @version      2.5
+// @version      2.6
 // @description  For DK I guess?
 // @author       DK (Stolen from Union Flag Project)
 // @match        https://www.reddit.com/r/place/*
@@ -189,7 +189,7 @@ function connectSocket() {
 
 async function attemptPlace() {
     if (order == undefined) {
-        setTimeout(attemptPlace, 2000) // probeer opnieuw in 2sec.
+        setTimeout(attemptPlace, 10000) // probeer opnieuw in 2sec.
         return
     }
     var ctx
@@ -282,7 +282,7 @@ async function attemptPlace() {
                 console.log("If you ignore it it doesn't exist." + e)
                 Toastify({
                     text: `You are on cooldown!`,
-                    duration: 1000,
+                    duration: 10000,
                 }).showToast()
                 setTimeout(attemptPlace, 20000)
             }
@@ -467,10 +467,10 @@ function getCanvasFromUrl(url, canvas, x = 0, y = 0, clearCanvas = false) {
             }
             img.onerror = () => {
                 Toastify({
-                    text: 'Error retrieving folder. Try again in 3 sec...',
-                    duration: 3000,
+                    text: 'Error retrieving folder. Try again in 10 sec...',
+                    duration: 10000,
                 }).showToast()
-                setTimeout(() => loadImage(ctx), 3000)
+                setTimeout(() => loadImage(ctx), 10000)
             }
             img.src = url
         }
